@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libtool libreadline-dev zlib1g-dev flex bison libseccomp-dev \
+            libssl-dev clang pkg-config libpq-dev cmake postgresql-client protobuf-compiler \
+            libprotobuf-dev libcurl4-openssl-dev openssl python3-poetry lsof libicu-dev
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          rustup default $(cat rust-toolchain.toml)
+
+      - name: Build neon
+        run: |
+          make -j$(nproc) -s
+
+      - name: Verify build output
+        run: ls -R target || true
